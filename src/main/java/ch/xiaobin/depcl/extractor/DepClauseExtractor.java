@@ -105,17 +105,13 @@ public class DepClauseExtractor {
 		List<DepClause> depClauseList = new ArrayList<>();
 
 		//check if SG annotation exists
-//		logger.trace("Checking if semantic graph exist...");
 		if(!containsSemanticGraphAnnotations(sentence)) {
 			throw new DepClauseExtractorException(EX_MSG_MISSING_SG_ANNO);
 		}
 
-//		logger.trace("Getting semantic graph ...");
 		SemanticGraph sentSemGraph = sentence.get(SemanticGraphCoreAnnotations.EnhancedPlusPlusDependenciesAnnotation.class);
-//		logger.trace("Got semantic graph ...");
 
 		//iterate the edges to find dependent clauses relations
-		int i = 0;
 		for(SemanticGraphEdge sgEdge: sentSemGraph.edgeIterable()) {
 //			logger.trace("iterating {}, edgeName: {}...", i++, sgEdge.getRelation().getShortName());
 
@@ -145,36 +141,42 @@ public class DepClauseExtractor {
 						createDepClauseObj(sentence, sgEdge.getDependent(), 
 								sgEdge.getGovernor(), DepClause.ClauseType.CSUBJPASS));
 				break;
-				//			default: 
-				//				System.out.println(sgEdge.getRelation().getShortName());
 			}
-//			logger.trace("next iteration: {}.", i);
+		}
+		
+		if(depClauseList.isEmpty()) {
+			depClauseList.add(createEmptyDepClauseObj(sentence));
 		}
 
-//		logger.trace("Returning dep clause....");
 		return depClauseList;
 	}
 
-	private DepClause createDepClauseObj(CoreMap sentenceAnnotation, IndexedWord clauseRoot, IndexedWord governor, String clauseType) {
-//		logger.trace("creating dep clause object...");
+	//for listing sentences without dependent clauses
+	private DepClause createEmptyDepClauseObj(CoreMap sentenceAnnotation) {
 		int sentenceIdx = sentenceAnnotation.get(SentenceIndexAnnotation.class);
 		String sentence = sentenceAnnotation.get(TextAnnotation.class);
+		DepClause depClause = new DepClause(documentId, sentenceIdx, sentence, null, 0, 0);
+		
+		return depClause;
+	}
+
+	private DepClause createDepClauseObj(CoreMap sentenceAnnotation, IndexedWord clauseRoot, IndexedWord governor, String clauseType) {
+		int sentenceIdx = sentenceAnnotation.get(SentenceIndexAnnotation.class);
+		String sentence = sentenceAnnotation.get(TextAnnotation.class);
+		
+		//get num tokens
+		int numTokens = sentenceAnnotation.get(TokensAnnotation.class).size();
 
 		//get the clause span indexes
-//		logger.trace("getting clause span...");
 		SemanticGraph sentenceSemGraph = 
 				sentenceAnnotation.get(SemanticGraphCoreAnnotations.EnhancedPlusPlusDependenciesAnnotation.class);
-//		logger.trace("got clause span...");
 
-//		logger.trace("yeilding span of word: {}", clauseRoot.originalText());
-//		Pair<Integer, Integer> clauseSpan = sentenceSemGraph.yieldSpan(clauseRoot);
-		Pair<Integer, Integer> clauseSpan = yieldSpan(sentenceSemGraph, clauseRoot);
-//		logger.trace("yielt clause span...");
+		Pair<Integer, Integer> clauseSpan = sentenceSemGraph.yieldSpan(clauseRoot);
+//		Pair<Integer, Integer> clauseSpan = yieldSpan(sentenceSemGraph, clauseRoot, numTokens);
 
 		int beginTokenIdx = clauseSpan.first();
 		int endTokenIdx = clauseSpan.second();
-
-//		logger.trace("beginTokenIdx: {}", beginTokenIdx);
+//		logger.trace("beginTokenIdx: {}, endTokenIdx: {}", beginTokenIdx, endTokenIdx);
 
 		DepClause depClause = new DepClause(documentId, sentenceIdx, sentence, clauseType, beginTokenIdx, endTokenIdx);
 
@@ -225,7 +227,7 @@ public class DepClauseExtractor {
 		List<CoreLabel> sentTokenList = sentenceAnnotation.get(TokensAnnotation.class);
 		int clauseTextBeginOffset = sentTokenList.get(depClause.getBeginTokenIdx()).beginPosition();
 		int clauseTextEndOffset = //sentTokenList.get(depClause.getEndTokenIdx()).endPosition();
-		depClause.getEndTokenIdx() >= sentTokenList.size() ? 
+				depClause.getEndTokenIdx() >= sentTokenList.size() ? 
 				sentTokenList.get(sentTokenList.size() - 1).endPosition() + 1:
 				sentTokenList.get(depClause.getEndTokenIdx()).endPosition();
 
@@ -238,7 +240,7 @@ public class DepClauseExtractor {
 
 		String clauseText = document.get(TextAnnotation.class)
 				.substring(clauseTextBeginOffset, clauseTextEndOffset - 1);
-		depClause.setClauseText(clauseText);
+		depClause.setClauseText(clauseText.replaceAll("\\n", "").replaceAll("\\t", " "));
 
 
 //		depClause.setClauseText(sentenceAnnotation.get(TextAnnotation.class).substring(clauseTextBeginOffset, clauseTextEndOffset));
@@ -258,7 +260,7 @@ public class DepClauseExtractor {
 	}
 
 	//This is a make shift solution, because the yieldSpan function in SemanticGraph could have indefinite loop
-	public Pair<Integer, Integer> yieldSpan(SemanticGraph sentenceSemGraph, IndexedWord word) {
+	public Pair<Integer, Integer> yieldSpan(SemanticGraph sentenceSemGraph, IndexedWord word, int numTokens) {
 		int min = Integer.MAX_VALUE;
 		int max = Integer.MIN_VALUE;
 		Stack<IndexedWord> fringe = new Stack<>();
@@ -272,11 +274,14 @@ public class DepClauseExtractor {
 //					logger.trace("Pushing edge dependent: {}", edge.getDependent().originalText());
 					fringe.push(edge.getDependent());
 				}
+				if(max >= numTokens - 1 || fringe.size() >= numTokens) {
+					break;
+				}
 			}
 //			logger.trace("max:{}, min{}, fringeSize: {}", max, min, fringe.size());
-			if(fringe.size() > 1000) {
-				break;
-			}
+				if(max >= numTokens - 1 || fringe.size() >= numTokens) {
+					break;
+				}
 		}
 		return Pair.makePair(min, max);
 	}

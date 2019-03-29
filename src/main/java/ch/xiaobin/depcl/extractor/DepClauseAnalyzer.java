@@ -88,14 +88,12 @@ public class DepClauseAnalyzer {
 	 * @throws DepClauseExtractorException 
 	 */
 	public List<DepClause> analyzeText(String documentId, String text) throws DepClauseExtractorException {
-//		logger.trace("Analyzing document {}: {}...", documentId, text.length() >= 40? text.substring(0, 40) : text);
 		List<DepClause> clauseList; 
 
 		Annotation document = new Annotation(text);
 		document.set(DocIDAnnotation.class, documentId);
 		DepClauseExtractor depClauseExtractor = new DepClauseExtractor(pipeline, document);
 		
-//		logger.trace("getting dependent clauses...");
 		clauseList = depClauseExtractor.getDepClauses();
 
 		return clauseList;
@@ -136,8 +134,6 @@ public class DepClauseAnalyzer {
 
 			logger.trace("Starting thread {} to analyze {} file(s)...", i, filesToAnalyze.size()); 
 			startAnalysisThread(i, filesToAnalyze, new File(resultFileName));
-			
-			
 		}
 
 	}
@@ -164,10 +160,11 @@ public class DepClauseAnalyzer {
 						//for each file analyze and output results
 						String text = FileUtils.readFileToString(fileToAnalyze, ENCODING);
 						String documentId = fileToAnalyze.getName();
+
+						logger.trace("Thread {} analyzing file {}/{}: {}...", getName(), i+1, numFiles, documentId);
 						List<DepClause> depClauseList = analyzeText(documentId, text);
 						List<String> resultLines = new ArrayList<>();
 
-						logger.trace("Thread {} analyzing file {}/{}: {}...", getName(), i+1, numFiles, documentId);
 						for(DepClause depClause: depClauseList) {
 							if(depClause == null) {
 								continue; //skip null object
@@ -194,8 +191,6 @@ public class DepClauseAnalyzer {
 						}
 						FileUtils.writeLines(resultsFile, resultLines, null, true);
 						
-						//remove analyzed file
-//						FileUtils.deleteQuietly(fileToAnalyze);
 					}
 					logger.trace("Thread {} completed!", threadName);
 				} catch (IOException | DepClauseExtractorException e1) {
