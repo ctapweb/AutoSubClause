@@ -1,7 +1,7 @@
 /**
  * 
  */
-package ch.xiaobin.depcl.annotator;
+package ch.xiaobin.subordination.annotator;
 
 import java.io.File;
 import java.io.FileInputStream;

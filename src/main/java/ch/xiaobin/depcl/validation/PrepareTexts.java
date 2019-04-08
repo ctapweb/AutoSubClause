@@ -14,7 +14,7 @@ import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ch.xiaobin.depcl.annotator.AnnotationPipelineManager;
+import ch.xiaobin.subordination.annotator.AnnotationPipelineManager;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
 import edu.stanford.nlp.pipeline.Annotation;

@@ -13,7 +13,8 @@ import java.util.Stack;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ch.xiaobin.depcl.extractor.DepClause.ClauseType;
+import ch.xiaobin.subordination.dao.SubordinateClause;
+import ch.xiaobin.subordination.dao.SubordinateClause.ClauseType;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.ling.CoreAnnotations.DocIDAnnotation;
@@ -78,8 +79,8 @@ public class DepClauseExtractor {
 	 * @return
 	 * @throws DepClauseExtractorException 
 	 */
-	public List<DepClause> getDepClauses() throws DepClauseExtractorException {
-		List<DepClause> depClauseList = new ArrayList<>();
+	public List<SubordinateClause> getDepClauses() throws DepClauseExtractorException {
+		List<SubordinateClause> depClauseList = new ArrayList<>();
 
 		//check if document annotated
 		if(!containsSemanticGraphAnnotations(document)) {
@@ -101,8 +102,8 @@ public class DepClauseExtractor {
 	 * @return
 	 * @throws DepClauseExtractorException 
 	 */
-	public List<DepClause> getDepClauses(CoreMap sentence) throws DepClauseExtractorException {
-		List<DepClause> depClauseList = new ArrayList<>();
+	public List<SubordinateClause> getDepClauses(CoreMap sentence) throws DepClauseExtractorException {
+		List<SubordinateClause> depClauseList = new ArrayList<>();
 
 		//check if SG annotation exists
 		if(!containsSemanticGraphAnnotations(sentence)) {
@@ -116,30 +117,30 @@ public class DepClauseExtractor {
 //			logger.trace("iterating {}, edgeName: {}...", i++, sgEdge.getRelation().getShortName());
 
 			switch(sgEdge.getRelation().getShortName()) {
-			case DepClause.ClauseType.ACL: //adjectival clause
+			case ch.xiaobin.subordination.dao.ClauseType.ACL: //adjectival clause
 				depClauseList.add(
 						createDepClauseObj(sentence, sgEdge.getDependent(), 
-								sgEdge.getGovernor(), DepClause.ClauseType.ACL));
+								sgEdge.getGovernor(), ch.xiaobin.subordination.dao.ClauseType.ACL));
 				break;
-			case DepClause.ClauseType.ADVCL: //adverbial clause
+			case ch.xiaobin.subordination.dao.ClauseType.ADVCL: //adverbial clause
 				depClauseList.add(
 						createDepClauseObj(sentence, sgEdge.getDependent(), 
-								sgEdge.getGovernor(), DepClause.ClauseType.ADVCL));
+								sgEdge.getGovernor(), ch.xiaobin.subordination.dao.ClauseType.ADVCL));
 				break;
-			case DepClause.ClauseType.CCOMP: //complement clause
+			case ch.xiaobin.subordination.dao.ClauseType.CCOMP: //complement clause
 				depClauseList.add(
 						createDepClauseObj(sentence, sgEdge.getDependent(), 
-								sgEdge.getGovernor(), DepClause.ClauseType.CCOMP));
+								sgEdge.getGovernor(), ch.xiaobin.subordination.dao.ClauseType.CCOMP));
 				break;
-			case DepClause.ClauseType.CSUBJ: //subjectival clause
+			case ch.xiaobin.subordination.dao.ClauseType.CSUBJ: //subjectival clause
 				depClauseList.add(
 						createDepClauseObj(sentence, sgEdge.getDependent(), 
-								sgEdge.getGovernor(), DepClause.ClauseType.CSUBJ));
+								sgEdge.getGovernor(), ch.xiaobin.subordination.dao.ClauseType.CSUBJ));
 				break;
-			case DepClause.ClauseType.CSUBJPASS: //passive subjectival clause
+			case ch.xiaobin.subordination.dao.ClauseType.CSUBJPASS: //passive subjectival clause
 				depClauseList.add(
 						createDepClauseObj(sentence, sgEdge.getDependent(), 
-								sgEdge.getGovernor(), DepClause.ClauseType.CSUBJPASS));
+								sgEdge.getGovernor(), ch.xiaobin.subordination.dao.ClauseType.CSUBJPASS));
 				break;
 			}
 		}
@@ -152,15 +153,15 @@ public class DepClauseExtractor {
 	}
 
 	//for listing sentences without dependent clauses
-	private DepClause createEmptyDepClauseObj(CoreMap sentenceAnnotation) {
+	private SubordinateClause createEmptyDepClauseObj(CoreMap sentenceAnnotation) {
 		int sentenceIdx = sentenceAnnotation.get(SentenceIndexAnnotation.class);
 		String sentence = sentenceAnnotation.get(TextAnnotation.class);
-		DepClause depClause = new DepClause(documentId, sentenceIdx, sentence, null, 0, 0);
+		SubordinateClause depClause = new SubordinateClause(documentId, sentenceIdx, sentence, null, 0, 0);
 		
 		return depClause;
 	}
 
-	private DepClause createDepClauseObj(CoreMap sentenceAnnotation, IndexedWord clauseRoot, IndexedWord governor, String clauseType) {
+	private SubordinateClause createDepClauseObj(CoreMap sentenceAnnotation, IndexedWord clauseRoot, IndexedWord governor, String clauseType) {
 		int sentenceIdx = sentenceAnnotation.get(SentenceIndexAnnotation.class);
 		String sentence = sentenceAnnotation.get(TextAnnotation.class);
 		
@@ -178,7 +179,7 @@ public class DepClauseExtractor {
 		int endTokenIdx = clauseSpan.second();
 //		logger.trace("beginTokenIdx: {}, endTokenIdx: {}", beginTokenIdx, endTokenIdx);
 
-		DepClause depClause = new DepClause(documentId, sentenceIdx, sentence, clauseType, beginTokenIdx, endTokenIdx);
+		SubordinateClause depClause = new SubordinateClause(documentId, sentenceIdx, sentence, clauseType, beginTokenIdx, endTokenIdx);
 
 		//sets sub conjunction
 		for(SemanticGraphEdge outgoingEdge: sentenceSemGraph.outgoingEdgeIterable(clauseRoot)) {

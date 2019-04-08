@@ -16,7 +16,8 @@ import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ch.xiaobin.depcl.annotator.AnnotationPipelineManager;
+import ch.xiaobin.subordination.annotator.AnnotationPipelineManager;
+import ch.xiaobin.subordination.dao.SubordinateClause;
 import edu.stanford.nlp.ling.CoreAnnotations.DocIDAnnotation;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.AnnotationPipeline;
@@ -87,8 +88,8 @@ public class DepClauseAnalyzer {
 	 * @return
 	 * @throws DepClauseExtractorException 
 	 */
-	public List<DepClause> analyzeText(String documentId, String text) throws DepClauseExtractorException {
-		List<DepClause> clauseList; 
+	public List<SubordinateClause> analyzeText(String documentId, String text) throws DepClauseExtractorException {
+		List<SubordinateClause> clauseList; 
 
 		Annotation document = new Annotation(text);
 		document.set(DocIDAnnotation.class, documentId);
@@ -162,10 +163,10 @@ public class DepClauseAnalyzer {
 						String documentId = fileToAnalyze.getName();
 
 						logger.trace("Thread {} analyzing file {}/{}: {}...", getName(), i+1, numFiles, documentId);
-						List<DepClause> depClauseList = analyzeText(documentId, text);
+						List<SubordinateClause> depClauseList = analyzeText(documentId, text);
 						List<String> resultLines = new ArrayList<>();
 
-						for(DepClause depClause: depClauseList) {
+						for(SubordinateClause depClause: depClauseList) {
 							if(depClause == null) {
 								continue; //skip null object
 							}

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import ch.xiaobin.subordination.dao.SubordinateClause;
 import edu.stanford.nlp.ie.machinereading.structure.MachineReadingAnnotations.DependencyAnnotation;
 import edu.stanford.nlp.ie.machinereading.structure.MachineReadingAnnotations.DocumentIdAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.DocIDAnnotation;
@@ -54,8 +55,8 @@ public class App
 //        System.out.println(docId);
         
         DepClauseExtractor depClauseExtractor = new DepClauseExtractor(pipeline, document);
-        List<DepClause> depClauseList = depClauseExtractor.getDepClauses();
-        for(DepClause depClause: depClauseList) {
+        List<SubordinateClause> depClauseList = depClauseExtractor.getDepClauses();
+        for(SubordinateClause depClause: depClauseList) {
         	System.out.println("sentence: " + depClause.getSentence());
         	System.out.println("clauseText: " + depClause.getClauseText());
         	System.out.println("beginTokenIdx: " + depClause.getBeginTokenIdx());
