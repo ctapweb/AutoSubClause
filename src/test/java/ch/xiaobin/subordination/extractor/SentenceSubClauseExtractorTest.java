@@ -78,11 +78,11 @@ public class SentenceSubClauseExtractorTest {
 		assertEquals("that", relativeClause.getSubordinator());
 		assertEquals(1, relativeClause.getEmbeddedness());
 		assertTrue(relativeClause.isRestrictive());
-		assertTrue(relativeClause.isHasHeadNoun());
+		assertTrue(relativeClause.hasHeadNoun());
 		assertEquals(14, relativeClause.getHeadNounBeginIdx());
 		assertEquals(18, relativeClause.getHeadNounEndIdx());
 		assertEquals("show", relativeClause.getHeadNoun());
-		assertTrue(relativeClause.isHeadNounAnimate());
+		assertFalse(relativeClause.isHeadNounAnimate());
 		assertEquals(NPRoles.PREPOSITION_COMPLEMENT, relativeClause.getHeadNounRoleInMainClause());
 		assertEquals(NPRoles.SUBJECT, relativeClause.getHeadNounRoleInSubClause());
 		assertEquals("that was very popular", clauseText);
@@ -159,7 +159,7 @@ public class SentenceSubClauseExtractorTest {
 		//convert to adjunct clause
 		AdjunctClause adjunctClause = (AdjunctClause) subordinateClause;
 
-		assertEquals(ClauseType.ADJUNT, adjunctClause.getClauseType());
+		assertEquals(ClauseType.ADJUNCT, adjunctClause.getClauseType());
 		assertTrue(adjunctClause.isFinite());
 		assertEquals(20, adjunctClause.getClauseBeginIdx());
 		assertEquals(49, adjunctClause.getClauseEndIdx());

@@ -45,6 +45,11 @@ public class AdjunctClause extends SubordinateClause {
 	}
 
 	private void assignFunction() {
+		if(getSubordinator() == null) {
+			this.function = null;
+			return;
+		} 
+
 		String subordinator = getSubordinator().toLowerCase();
 		if(TIME_SUBORDINATORS.contains(subordinator)) {
 			this.function = AdjunctClauseFunction.TIME;
@@ -64,6 +69,8 @@ public class AdjunctClause extends SubordinateClause {
 			this.function = AdjunctClauseFunction.MANNER;
 		} else if(RESULTS_SUBORDINATORS.contains(subordinator)) {
 			this.function = AdjunctClauseFunction.RESULTS;
+		} else {
+			this.function = null;
 		}
 	}
 
@@ -95,5 +102,11 @@ public class AdjunctClause extends SubordinateClause {
 				.append("function: ").append(function).append("\n")
 				.toString();
 	}
-	
+
+	@Override
+	String stringifyFields() {
+		return new StringBuilder(super.stringifyFields() + ",\n")
+				.append("\"").append("function").append("\": \"").append(function).append("\"\n")
+				.toString();
+	}	
 }

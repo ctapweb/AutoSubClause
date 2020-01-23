@@ -8,4 +8,5 @@ import edu.stanford.nlp.pipeline.Annotation;
 public interface SubClauseExtractor {
 
 	public List<SubordinateClause> extractClauses();
+	
 }

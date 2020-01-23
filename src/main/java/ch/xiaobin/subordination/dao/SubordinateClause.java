@@ -3,17 +3,23 @@
  */
 package ch.xiaobin.subordination.dao;
 
+import java.util.Stack;
+
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ch.xiaobin.subordination.extractor.TargetRelations;
+import ch.xiaobin.subordination.extractor.Utils;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.semgraph.SemanticGraphEdge;
 import edu.stanford.nlp.trees.UniversalEnglishGrammaticalRelations;
+import edu.stanford.nlp.util.CoreMap;
 import edu.stanford.nlp.util.Pair;
 
 /**
@@ -25,9 +31,10 @@ import edu.stanford.nlp.util.Pair;
 public class SubordinateClause {
 	private String documentId;
 	private int sentenceIdx;
-	private SemanticGraph sentSemGraph; //semantic graph of sentence
-	private SemanticGraphEdge sgEdge; //the edge that identify the clause
-	private IndexedWord clauseRoot;
+	private transient CoreMap annotatedSentence;
+	private transient SemanticGraph sentSemGraph; //semantic graph of sentence
+	private transient SemanticGraphEdge sgEdge; //the edge that identify the clause
+	private transient IndexedWord clauseRoot;
 	private String sgEdgeRelationName;
 
 	//if the clause is finite or not
@@ -51,11 +58,16 @@ public class SubordinateClause {
 	//level of embeddedness, main clause at level 0
 	private int embeddedness;
 	
-	private final Logger logger = LogManager.getLogger();
+	private transient final Logger logger = LogManager.getLogger();
 	
+	//empty constructor
+	public SubordinateClause() {
+	}
+
 	public SubordinateClause(SubordinateClause anotherSubordinateClause) {
 		this.documentId = anotherSubordinateClause.documentId;
 		this.sentenceIdx = anotherSubordinateClause.sentenceIdx;
+		this.annotatedSentence = anotherSubordinateClause.annotatedSentence;
 		this.sentSemGraph = anotherSubordinateClause.sentSemGraph;
 		this.sgEdge = anotherSubordinateClause.sgEdge;
 		this.clauseRoot = anotherSubordinateClause.clauseRoot;
@@ -77,8 +89,9 @@ public class SubordinateClause {
 	 * @param sentSemGraph the sentence from which the clause is extracted
 	 * @param sgEdge the edge identifying the clause
 	 */
-	public SubordinateClause(int sentenceIdx, SemanticGraph sentSemGraph, SemanticGraphEdge sgEdge) {
+	public SubordinateClause(int sentenceIdx, CoreMap annotatedSentence, SemanticGraph sentSemGraph, SemanticGraphEdge sgEdge) {
 		this.sentenceIdx = sentenceIdx;
+		this.annotatedSentence = annotatedSentence;
 		this.sentSemGraph = sentSemGraph;
 		this.sgEdge = sgEdge;
 		this.clauseRoot = sgEdge.getDependent();
@@ -108,11 +121,13 @@ public class SubordinateClause {
 	}
 	
 	private void countEmbeddedness() {
-		IndexedWord sentRoot = sentSemGraph.getFirstRoot();
-//		logger.trace("sentence Root: {}, {} ", sentRoot.index(), sentRoot.originalText());
-//		logger.trace("clause Root: {}, {} ", clauseRoot.index(), clauseRoot.originalText());
-		int levels = sentSemGraph.commonAncestor(sentRoot, clauseRoot);
-		this.embeddedness = levels;
+//		IndexedWord sentRoot = sentSemGraph.getFirstRoot();
+//		int levels = sentSemGraph.commonAncestor(sentRoot, clauseRoot);
+//		this.embeddedness = levels;
+		
+		this.embeddedness = sentSemGraph.getPathToRoot(clauseRoot).size();
+		
+		
 	}
 
 	private void identifySubordinator() {
@@ -154,7 +169,10 @@ public class SubordinateClause {
 	}
 
 	private void setClauseSpan() {
-		Pair<Integer, Integer> clauseSpan = sentSemGraph.yieldSpan(clauseRoot);
+		
+//		Pair<Integer, Integer> clauseSpan = sentSemGraph.yieldSpan(clauseRoot);
+		Pair<Integer, Integer> clauseSpan = Utils.yieldSpan(sentSemGraph, clauseRoot, getNumTokens());
+
 //		logger.trace("clauseSpan: {}, {}", clauseSpan.first, clauseSpan.second);
 //		logger.trace("get Node: {}, {}", 1, sentSemGraph.getNodeByIndex(1).originalText());
 		int first;
@@ -165,101 +183,119 @@ public class SubordinateClause {
 		}
 
 		//span may result in 0 index, which will result in not getting the node
+		first = first == 0 ? 1: first; 
 		int beginIdx = sentSemGraph.getNodeByIndex(first).beginPosition();
 		int endIdx = sentSemGraph.getNodeByIndex(clauseSpan.second()).endPosition();
 		this.clauseBeginIdx = beginIdx;
 		this.clauseEndIdx = endIdx;
 	}
-
+	
+	//gets number of tokens of the sentence
+	int getNumTokens() {
+		return annotatedSentence.get(TokensAnnotation.class).size();
+	}
+	
 	private void identifyClauseType() {
 		if(TargetRelations.ACL.equals(sgEdgeRelationName)) {
 			this.clauseType = ClauseType.RELATIVE;
 		} else if(TargetRelations.ADVCL.equals(sgEdgeRelationName)) {
-			this.clauseType = ClauseType.ADJUNT;
+			this.clauseType = ClauseType.ADJUNCT;
 		} else if(TargetRelations.CCOMP.equals(sgEdgeRelationName) ||
 				TargetRelations.CSUBJ.equals(sgEdgeRelationName) || 
-				TargetRelations.CSUBJPASS.equals(sgEdgeRelationName)) {
+				TargetRelations.CSUBJPASS.equals(sgEdgeRelationName) ||
+				TargetRelations.XCOMP.equals(sgEdgeRelationName)
+				) {
 			this.clauseType = ClauseType.COMPLEMENT;
-		}
+		} 	
 	}
 	
 	//check if the sub clause finite
-		// Finite clauses are clauses that contain verbs which show tense. Otherwise they are nonfinite.
-		// some examples:
-		//    I had something to eat [before leaving]. 
-		//    [After having spent six hours at the hospital], they eventually came home.
-		//    [Helped by local volunteers], staff at the museum have spent many years sorting and cataloguing more than 100,000 photographs.
-		//    He left the party and went home, [not having anyone to talk to].
-		//    The person to ask [about going to New Zealand] is Beck.
-		//    You have to look at the picture really carefully [in order to see all the detail].
-		private void identifyFiniteness() {
-			//xcomp is nonfinite by definition
-			if(sgEdgeRelationName.equals(TargetRelations.XCOMP)) {
-				isFinite = false;
-				return;
-			}
-			
-			//if the verb follows TO or a preposition, it is nonfinite 
-			//the verb is the root of the clause
-			int idxWordBeforeVerb = clauseRoot.index() - 1;
-			IndexedWord wordBeforeVerb = sentSemGraph.getNodeByIndexSafe(idxWordBeforeVerb);
-			if(wordBeforeVerb == null) {
-				isFinite = true;
-				return;
-			}
-
-			String posWordBeforeVerb = wordBeforeVerb.get(PartOfSpeechAnnotation.class);
-			if(posWordBeforeVerb.equals("IN") || posWordBeforeVerb.equals("TO")) {
-				isFinite = false;
-				return;
-			}
-			
-			String posVerb = clauseRoot.get(PartOfSpeechAnnotation.class);
-
-			//if verb is gerund (VBG), it must have an aux, otherwise nonfinite
-			if(posVerb.equals("VBG")) {
-				boolean hasAux = false;
-				//check if there is aux
-				for(SemanticGraphEdge outgoingEdge: sentSemGraph.outgoingEdgeIterable(clauseRoot)) {
-					String rel = getRelationName(outgoingEdge);
-					if(rel.equals("aux")) {
-						hasAux= true;
-					}
-				}
-				if(!hasAux) {
-					// nonfinite
-					isFinite = false;
-					return;
-				}
-			}
-			
-			//if verb is past participle (VBN), it must have aux/auxpass which is not VBGs, otherwise non-finite
-			if(posVerb.equals("VBN")) {
-				boolean hasVBGAux = false;
-				//check if there is aux that is not in gerund form
-				for(SemanticGraphEdge outgoingEdge: sentSemGraph.outgoingEdgeIterable(clauseRoot)) {
-					String rel = getRelationName(outgoingEdge);
-					if(rel.equals("aux") || rel.equals("auxpass")) {
-						//get pos of aux
-						IndexedWord aux = outgoingEdge.getDependent();
-						String auxPOS = aux.get(PartOfSpeechAnnotation.class);
-						if(auxPOS.equals("VBG")) {
-							hasVBGAux= true;
-						}
-					}
-				}
-				if(hasVBGAux) {
-					isFinite = false; // nonfinite
-					return; 
-				}
-				
-			}
-
-			isFinite = true;
+	// Finite clauses are clauses that contain verbs which show tense. Otherwise they are nonfinite.
+	// some examples:
+	//    I had something to eat [before leaving]. 
+	//    [After having spent six hours at the hospital], they eventually came home.
+	//    [Helped by local volunteers], staff at the museum have spent many years sorting and cataloguing more than 100,000 photographs.
+	//    He left the party and went home, [not having anyone to talk to].
+	//    The person to ask [about going to New Zealand] is Beck.
+	//    You have to look at the picture really carefully [in order to see all the detail].
+	private void identifyFiniteness() {
+		System.out.println("identifying finiteness....");
+		//xcomp is nonfinite by definition
+		if(sgEdgeRelationName.equals(TargetRelations.XCOMP)) {
+			isFinite = false;
+			return;
 		}
-		
+
+		//if the verb follows TO or a preposition, it is nonfinite 
+		//the verb is the root of the clause
+		int idxWordBeforeVerb = clauseRoot.index() - 1;
+		IndexedWord wordBeforeVerb = sentSemGraph.getNodeByIndexSafe(idxWordBeforeVerb);
+		String posVerb = clauseRoot.get(PartOfSpeechAnnotation.class);
+		if(wordBeforeVerb == null) {
+			if(posVerb.equals("VBG") || posVerb.equals("VBN")) {
+				isFinite = false;
+			} else {
+				isFinite =true;
+			}
+			//not VBG or VBN, then finite
+			return;
+		}
+
+		String posWordBeforeVerb = wordBeforeVerb.get(PartOfSpeechAnnotation.class);
+		if(posWordBeforeVerb.equals("IN") || posWordBeforeVerb.equals("TO")) {
+			isFinite = false;
+			return;
+		}
+
+		//if verb is gerund (VBG), it must have an aux, otherwise nonfinite
+		if(posVerb.equals("VBG")) {
+			boolean hasAux = false;
+			//check if there is aux
+			for(SemanticGraphEdge outgoingEdge: sentSemGraph.outgoingEdgeIterable(clauseRoot)) {
+				String rel = getRelationName(outgoingEdge);
+				if(rel.equals("aux")) {
+					hasAux= true;
+				}
+			}
+			if(!hasAux) {
+				// nonfinite
+				isFinite = false;
+
+				return;
+			}
+		}
+
+		//if verb is past participle (VBN), it must have aux/auxpass which is not VBGs, otherwise non-finite
+		if(posVerb.equals("VBN")) {
+			boolean hasVBGAux = false;
+			//check if there is aux that is not in gerund form
+			for(SemanticGraphEdge outgoingEdge: sentSemGraph.outgoingEdgeIterable(clauseRoot)) {
+				String rel = getRelationName(outgoingEdge);
+				if(rel.equals("aux") || rel.equals("auxpass")) {
+					//get pos of aux
+					IndexedWord aux = outgoingEdge.getDependent();
+					String auxPOS = aux.get(PartOfSpeechAnnotation.class);
+					if(auxPOS.equals("VBG")) {
+						hasVBGAux= true;
+					}
+				}
+			}
+			if(hasVBGAux) {
+				isFinite = false; // nonfinite
+				return; 
+			}
+
+		}
+
+		isFinite = true;
+	}
+
 	String getRelationName(SemanticGraphEdge sgEdge) {
 		return sgEdge.getRelation().getShortName();
+	}
+
+	public String getSentenceText() {
+		return annotatedSentence.get(TextAnnotation.class);
 	}
 
 	public SemanticGraphEdge getSgEdge() {
@@ -380,4 +416,31 @@ public class SubordinateClause {
 				.toString();
 	}
 	
+	public String toJSONString() {
+		return new StringBuilder("{\n")
+				.append(stringifyFields())
+				.append("}")
+				.toString();
+	}
+	
+	//prepare for JSON output
+	String stringifyFields() {
+		return new StringBuilder("")
+				.append("\"").append("documentId").append("\": \"").append(documentId).append("\",\n")
+				.append("\"").append("sentenceIdx").append("\": ").append(sentenceIdx).append(",\n")
+//				.append("\"").append("sentenceText").append("\": \"").append(getSentenceText().replaceAll("\\\"", "\\\\\"")).append("\",\n")
+				.append("\"").append("sentenceText").append("\": \"").append(StringEscapeUtils.escapeJson(getSentenceText())).append("\",\n")
+				.append("\"").append("clauseType").append("\": \"").append(clauseType).append("\",\n")
+				.append("\"").append("isFinite").append("\": ").append(isFinite).append(",\n")
+				.append("\"").append("clauseBeginIdx").append("\": ").append(clauseBeginIdx).append(",\n")
+				.append("\"").append("clauseEndIdx").append("\": ").append(clauseEndIdx).append(",\n")
+				.append("\"").append("hasSubordinator").append("\": ").append(hasSubordinator).append(",\n")
+				.append("\"").append("subordinatorBeginIdx").append("\": ").append(subordinatorBeginIdx).append(",\n")
+				.append("\"").append("subordinatorEndIdx").append("\": ").append(subordinatorEndIdx).append(",\n")
+				.append("\"").append("subordinator").append("\": \"").append(subordinator).append("\",\n")
+				.append("\"").append("embeddedness").append("\": ").append(embeddedness)
+				.toString();
+	}
+	
+	 
 }

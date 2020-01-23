@@ -1,4 +1,4 @@
-package ch.xiaobin.depcl.extractor;
+package ch.xiaobin.subordination.validation;
 
 public class TwoValues {
 

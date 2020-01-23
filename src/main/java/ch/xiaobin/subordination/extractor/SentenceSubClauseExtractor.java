@@ -86,7 +86,7 @@ public class SentenceSubClauseExtractor implements SubClauseExtractor {
 			logger.trace("Extracting basic subordinate clause info for edge {}...", sgEdge.getRelation().getShortName());
 			//extract basic subordinate information
 			//Basic subordinate clause objects contain elements that are common to all subordinate clause types.
-			SubordinateClause basicSubClause = new SubordinateClause(sentenceIdx, sentSemGraph, sgEdge);
+			SubordinateClause basicSubClause = new SubordinateClause(sentenceIdx, annotatedSentence, sentSemGraph, sgEdge);
 			
 			//get document id from annotation
 			basicSubClause.setDocumentId(annotatedSentence.get(DocIDAnnotation.class));
@@ -98,7 +98,7 @@ public class SentenceSubClauseExtractor implements SubClauseExtractor {
 				RelativeClause relativeClause = new RelativeClause(basicSubClause);
 				subClauses.add(relativeClause);
 				break;
-			case ADJUNT:
+			case ADJUNCT:
 				AdjunctClause adjunctClause = new AdjunctClause(basicSubClause);
 				subClauses.add(adjunctClause);
 				break;

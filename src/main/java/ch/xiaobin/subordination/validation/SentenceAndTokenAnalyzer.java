@@ -1,7 +1,7 @@
 /**
  * 
  */
-package ch.xiaobin.depcl.extractor;
+package ch.xiaobin.subordination.validation;
 
 import java.io.File;
 import java.io.IOException;
@@ -78,7 +78,7 @@ public class SentenceAndTokenAnalyzer {
 	 * @return
 	 * @throws DepClauseExtractorException 
 	 */
-	public TwoValues analyzeText(String documentId, String text) throws DepClauseExtractorException {
+	public TwoValues analyzeText(String documentId, String text) {
 //		logger.trace("Analyzing document {}: {}...", documentId, text.length() >= 40? text.substring(0, 40) : text);
 		TwoValues twoValues = new TwoValues(); 
 
@@ -175,7 +175,7 @@ public class SentenceAndTokenAnalyzer {
 
 					}
 					logger.trace("Thread {} completed!", threadName);
-				} catch (IOException | DepClauseExtractorException e1) {
+				} catch (IOException e1) {
 					logger.throwing(e1);
 				}
 			}

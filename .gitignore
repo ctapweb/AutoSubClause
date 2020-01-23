@@ -14,3 +14,6 @@
 # Maven
 log/
 target/
+
+# Other
+src/main/java/ch/xiaobin/subordination/main/ValidationAnalysis.java

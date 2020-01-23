@@ -1,13 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
-  <Appenders>
-    <Console name="Console" target="SYSTEM_OUT">
-      <PatternLayout pattern="IP[%X{userIP}] %d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n "/>
-    </Console>
-  </Appenders>
-  <Loggers>
-    <Root level="Trace">
-      <AppenderRef ref="Console"/>
-    </Root>
-  </Loggers>
+	<Appenders>
+		<Console name="Console" target="SYSTEM_OUT">
+			<PatternLayout
+				pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n " />
+		</Console>
+	</Appenders>
+	<Loggers>
+		<Root level="INFO">
+			<AppenderRef ref="Console" />
+		</Root>
+
+		<logger name="ch.xiaobin.subordination.main.FolderAnalyzer"  level="Trace" additivity="false">
+			<appender-ref ref="Console" />
+		</logger>
+	</Loggers>
 </Configuration>

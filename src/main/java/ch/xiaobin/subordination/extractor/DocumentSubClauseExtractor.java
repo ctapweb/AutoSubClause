@@ -59,4 +59,15 @@ public class DocumentSubClauseExtractor implements SubClauseExtractor {
 		return allClauses;
 	}
 
+	/**
+	 * Gets the text of a sentence.
+	 * @param sentenceIdx
+	 * @return
+	 */
+	public String getSentenceText(int sentenceIdx) {
+		return annotatedDocument.get(SentencesAnnotation.class).get(sentenceIdx).get(TextAnnotation.class);
+	}
+	
+	
+
 }

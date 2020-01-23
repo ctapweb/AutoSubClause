@@ -7,6 +7,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ch.xiaobin.subordination.extractor.Utils;
 import ch.xiaobin.subordination.utils.AnimacyDictionaries;
 import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
@@ -74,7 +75,8 @@ public class RelativeClause extends SubordinateClause {
 	//https://www.brighthubeducation.com/english-homework-help/32754-the-functions-of-nouns-and-noun-phrases/
 	private void setHeadNounRoles() {
 		IndexedWord headNoun = getSgEdge().getGovernor();
-		Pair<Integer, Integer> clauseSpan = getSentSemGraph().yieldSpan(getClauseRoot());
+//		Pair<Integer, Integer> clauseSpan = getSentSemGraph().yieldSpan(getClauseRoot());
+		Pair<Integer, Integer> clauseSpan = Utils.yieldSpan(getSentSemGraph(), getClauseRoot(), getNumTokens());
 		
 		for(SemanticGraphEdge edge: getSentSemGraph().incomingEdgeIterable(headNoun)) {
 			boolean isFromInsideRC = false;
@@ -127,7 +129,7 @@ public class RelativeClause extends SubordinateClause {
 		}
 
 		//set head noun roles
-		setHeadNounRoles();
+//		setHeadNounRoles();
 	}
 	
 	private void setRestrictiveness() {
@@ -171,7 +173,7 @@ public class RelativeClause extends SubordinateClause {
 	public void setRestrictive(boolean isRestrictive) {
 		this.isRestrictive = isRestrictive;
 	}
-	public boolean isHasHeadNoun() {
+	public boolean hasHeadNoun() {
 		return hasHeadNoun;
 	}
 	public void setHasHeadNoun(boolean hasHeadNoun) {
@@ -231,6 +233,19 @@ public class RelativeClause extends SubordinateClause {
 
 	}
 	
-	
+	@Override
+	String stringifyFields() {
+		return new StringBuilder(super.stringifyFields() + ",\n")
+				.append("\"").append("isRestrictive").append("\": ").append(isRestrictive).append(",\n")
+				.append("\"").append("hasHeadNoun").append("\": ").append(hasHeadNoun).append(",\n")
+				.append("\"").append("headNounBeginIdx").append("\": ").append(headNounBeginIdx).append(",\n")
+				.append("\"").append("headNounEndIdx").append("\": ").append(headNounEndIdx).append(",\n")
+				.append("\"").append("headNoun").append("\": \"").append(headNoun).append("\",\n")
+				.append("\"").append("isHeadNounAnimate").append("\": ").append(isHeadNounAnimate).append(",\n")
+				.append("\"").append("headNounRoleInMainClause").append("\": \"").append(headNounRoleInMainClause).append("\",\n")
+				.append("\"").append("headNounRoleInSubClause").append("\": \"").append(headNounRoleInSubClause).append("\"\n")
+				.toString();
+	}
+		
 	
 }
