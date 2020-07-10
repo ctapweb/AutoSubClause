@@ -190,7 +190,7 @@ public class FolderAnalyzer {
 							.append(subClause.getSubordinatorEndIdx()).append(CSV_SEPARATOR)
 							.append(subClause.getSubordinator()).append(CSV_SEPARATOR)
 							.append(subClause.getEmbeddedness()).append(CSV_SEPARATOR);
-
+							
 							//for complement clause;
 							if(subClause.getClauseType().equals(ClauseType.COMPLEMENT)) {
 								ComplementClause complementClause = (ComplementClause) subClause;
@@ -235,7 +235,7 @@ public class FolderAnalyzer {
 						
 						//////////////////////////////////////////////////////////////
 						//remove file after analysis
-						FileUtils.forceDelete(fileToAnalyze);
+						//FileUtils.forceDelete(fileToAnalyze);
 
 					}
 					logger.trace("Thread {} completed!", threadName);

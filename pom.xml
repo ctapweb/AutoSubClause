@@ -5,7 +5,7 @@
 
 	<groupId>ch.xiaobin.depcl</groupId>
 	<artifactId>extractor</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.2</version>
 	<packaging>jar</packaging>
 
 	<name>extractor</name>
@@ -81,8 +81,8 @@
 
 
 	</dependencies>
-	
-<!-- use the following to generat jar: mvn clean compile assembly:single -->
+
+	<!-- use the following to generat jar: mvn clean compile assembly:single -->
 	<build>
 		<plugins>
 			<plugin>
@@ -90,7 +90,8 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>ch.xiaobin.subordination.main.FolderAnalyzer</mainClass>
+							<mainClass>ch.xiaobin.subordination.main.FolderAnalyzer
+							</mainClass>
 						</manifest>
 					</archive>
 					<descriptorRefs>
@@ -100,4 +101,13 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<!-- to deploy to github packages: mvn clean compile assembly:single deploy-->
+	<distributionManagement>
+		<repository>
+			<id>github</id>
+			<name>GitHub ctapweb Apache Maven Packages</name>
+			<url>https://maven.pkg.github.com/ctapweb/autosubclause</url>
+		</repository>
+	</distributionManagement>
 </project>
