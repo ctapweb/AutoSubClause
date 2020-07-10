@@ -58,7 +58,7 @@ column separators) format.
 
 For Java programmers, if you want to have more control over the analysis or use AutoSubClause as a library, following the following steps:
 
-`
+```java
 //create a PipelineManager object:
 AnnotationPipelineManager pipelineManager = new AnnotationPipelineManager();
 
@@ -147,7 +147,8 @@ for(SubordinateClause subClause: subordinateClauses) {
 
 FileUtils.writeLines(resultsFile, resultLines, null, true);
 
-`
+```
+
 ### See also
 
 `ch.xiaobin.subordination.extractor.SentenceSubClauseExtractorTest` for examples on how to use the library programmatically.
